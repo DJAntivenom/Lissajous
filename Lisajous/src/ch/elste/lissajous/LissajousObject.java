@@ -18,18 +18,31 @@ public class LissajousObject {
 	 */
 	private int x, y;
 	private Polygon poly;
-	private Function f;
+	@SuppressWarnings("unused")
+	@Deprecated
+	private Function fOld;
+	private LissajousFunction f;
 
+	@Deprecated
 	public LissajousObject(int x, int y, Function f) {
+		this.x = x;
+		this.y = y;
+		this.fOld = f;
+
+		poly = new Polygon();
+	}
+
+	@Deprecated
+	public LissajousObject(int x, int y, StandardFunctions f) {
+		this(x, y, f.getF());
+	}
+
+	public LissajousObject(int x, int y, LissajousFunction f) {
 		this.x = x;
 		this.y = y;
 		this.f = f;
 
 		poly = new Polygon();
-	}
-
-	public LissajousObject(int x, int y, StandardFunctions f) {
-		this(x, y, f.getF());
 	}
 
 	public void addPoint(double theta) {
@@ -61,6 +74,19 @@ public class LissajousObject {
 		return y;
 	}
 
+	static class LissajousFunction {
+		private int xFactor, yFactor;
+
+		public LissajousFunction(int xFactor, int yFactor) {
+			this.xFactor = xFactor;
+			this.yFactor = yFactor;
+		}
+
+		public Point2D.Double f(double theta) {
+			return new Point2D.Double(Math.cos(xFactor * theta), Math.sin(yFactor * theta));
+		}
+	}
+
 	/**
 	 * A function defining a Lissajous curve with variable <code>theta</code> in
 	 * radiant.
@@ -68,19 +94,21 @@ public class LissajousObject {
 	 * @author Dillon
 	 *
 	 */
-	interface Function {
+	@Deprecated
+	static interface Function {
 		/**
 		 * Returns a {@link Point2D.Double} which only stores the x and y coordinates of
 		 * the Point described by this function.
 		 * 
 		 * @param theta
-		 *            the angle giving the point on the lissajous curve.
+		 *              the angle giving the point on the lissajous curve.
 		 * @return a {@link Point2D.Double} storing a point on this lissajous curve
 		 */
 		public abstract Point2D.Double f(double theta);
 	}
 
-	enum StandardFunctions {
+	@Deprecated
+	static enum StandardFunctions {
 		CIRCLE(new Function() {
 
 			@Override

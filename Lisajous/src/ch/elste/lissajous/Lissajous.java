@@ -11,7 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
-import ch.elste.lissajous.LissajousObject.StandardFunctions;
+import ch.elste.lissajous.LissajousObject.LissajousFunction;
 
 /**
  * @version 0.2
@@ -29,7 +29,7 @@ public class Lissajous implements Runnable {
 	private BufferedImage currFrame;
 	private JPanel panel;
 	private Graphics2D g2d;
-	private LissajousObject[] circles;
+	private LissajousObject[] xCircles, yCircles;
 	private double theta;
 
 	public static void main(String[] args) {
@@ -57,14 +57,15 @@ public class Lissajous implements Runnable {
 		circlesX = panel.getWidth() / (2 * CIRCLE_RADIUS) - 1;
 		circlesY = panel.getHeight() / (2 * CIRCLE_RADIUS) - 1;
 
-		circles = new LissajousObject[circlesX + circlesY];
+		xCircles = new LissajousObject[circlesX];
+		yCircles = new LissajousObject[circlesY];
 		for (int i = 0; i < circlesX; i++) {
-			circles[i] = new LissajousObject((i + 1) * 2 * CIRCLE_RADIUS, 0, StandardFunctions.CIRCLE);
-			circles[i].addAllPoints();
+			xCircles[i] = new LissajousObject((i + 1) * 2 * CIRCLE_RADIUS, 0, new LissajousFunction(i + 1, i + 1));
+			xCircles[i].addAllPoints();
 		}
-		for (int i = circlesX; i < circles.length; i++) {
-			circles[i] = new LissajousObject(0, (i - circlesX + 1) * 2 * CIRCLE_RADIUS, StandardFunctions.CIRCLE);
-			circles[i].addAllPoints();
+		for (int i = 0; i < circlesY; i++) {
+			yCircles[i] = new LissajousObject(0, (i + 1) * 2 * CIRCLE_RADIUS, new LissajousFunction(i + 1, i + 1));
+			yCircles[i].addAllPoints();
 		}
 	}
 
@@ -131,7 +132,11 @@ public class Lissajous implements Runnable {
 
 		g2d.clearRect(0, 0, currFrame.getWidth(), currFrame.getHeight());
 		g2d.setBackground(Color.BLACK);
-		for (LissajousObject lo : circles) {
+		for (LissajousObject lo : xCircles) {
+			lo.render(g2d);
+			lo.renderPoint(g2d, theta);
+		}
+		for (LissajousObject lo : yCircles) {
 			lo.render(g2d);
 			lo.renderPoint(g2d, theta);
 		}
