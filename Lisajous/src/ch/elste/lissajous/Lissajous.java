@@ -2,6 +2,7 @@ package ch.elste.lissajous;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.GraphicsDevice;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -20,27 +21,32 @@ import ch.elste.lissajous.LissajousObject.LissajousFunction;
 /**
  * An uninstancable class to start the program.
  * 
- * @version 1.0
+ * @version 1.1
+ * 
  * @author Dillon
  *
  */
 public class Lissajous implements Runnable {
-	public static final int HEIGHT = 800;
-	public static final int WIDTH = 800;
+	public static final boolean FULLSCREEN = true;
 	public static final boolean ON_SCREEN = true;
-	public static final double FREQUENCY = 1d / 2d;
+	public static final boolean ROTATING = true;
+	public static final double FREQUENCY = 2d;
 	public static final double PRECISION = 0.001d;
-	public static final int CIRCLE_DISTANCE = 50;
+	public static final int CIRCLE_DISTANCE = 150;
 	public static final int OFFSET = 5;
 	public static final int CIRCLE_RADIUS = CIRCLE_DISTANCE / 2 - OFFSET;
-	public static final String FORMAT = "jpg";
+	public static final String FORMAT = "png";
 	public static final File SAVE_FILE = new File(System.getProperty("user.home") + "\\Desktop\\lissajous." + FORMAT);
 
+	public static GraphicsDevice gd;
+	public static int HEIGHT;
+	public static int WIDTH;
 	private final int circlesX, circlesY;
 	private static final Lissajous instance = new Lissajous();
 	private static boolean active = true;
 
 	private static JPanel panel;
+	private static JFrame frame;
 	private static long frameStartTime, frameTime;
 	private BufferedImage currFrame;
 	private static BufferedImage saveImage;
@@ -57,13 +63,32 @@ public class Lissajous implements Runnable {
 	 * @since 0.2
 	 */
 	private Lissajous() {
-		JFrame frame = new JFrame("Lissajous");
+		gd = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		
+		HEIGHT = FULLSCREEN ? gd.getDisplayMode().getHeight() : 800;
+		WIDTH = FULLSCREEN ? gd.getDisplayMode().getWidth() : 1200;
+
+		circlesX = WIDTH / (CIRCLE_DISTANCE) - 1;
+		circlesY = HEIGHT / (CIRCLE_DISTANCE) - 1;
+	}
+
+	/**
+	 * @since 0.2
+	 */
+	@Override
+	public void run() {
+		frame = new JFrame("Lissajous");
 		panel = new JPanel();
 
 		panel.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT));
 
 		frame.setContentPane(panel);
-		frame.pack();
+		if (FULLSCREEN) {
+			frame.setUndecorated(true);
+			gd.setFullScreenWindow(frame);
+		} else {
+			frame.pack();
+		}
 		frame.setLocationRelativeTo(null);
 		frame.setResizable(false);
 		frame.setVisible(ON_SCREEN);
@@ -76,15 +101,6 @@ public class Lissajous implements Runnable {
 			}
 		});
 
-		circlesX = WIDTH / (CIRCLE_DISTANCE) - 1;
-		circlesY = HEIGHT / (CIRCLE_DISTANCE) - 1;
-	}
-
-	/**
-	 * @since 0.2
-	 */
-	@Override
-	public void run() {
 		currFrame = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 
 		initPoints();
@@ -97,23 +113,41 @@ public class Lissajous implements Runnable {
 
 					frameStartTime = System.nanoTime();
 
-					if (theta < 2 * Math.PI) {
-						render(false);
-						theta += FREQUENCY * getFrameTime();
-					} else if (theta < 3 * Math.PI) {
-						renderFPS(true);
-						theta += FREQUENCY * getFrameTime();
-					} else {
-						theta = 0;
-						render(true);
-						saveImage = deepCopy(currFrame);
-						for (int i = 0; i < circles.length; i++) {
-							for (int j = 0; j < circles[i].length; j++) {
-								circles[i][j].clearAllPoints();
+					if (!ROTATING) {
+						if (theta < 2 * Math.PI) {
+							render(false, true);
+							theta += FREQUENCY * getFrameTime();
+						} else if (theta < 3 * Math.PI) {
+							render(true, true);
+							renderFPS(true);
+							theta += FREQUENCY * getFrameTime();
+						} else {
+							theta = 0;
+							render(true, true);
+							saveImage = deepCopy(currFrame);
+							for (int i = 0; i < circles.length; i++) {
+								for (int j = 0; j < circles[i].length; j++) {
+									circles[i][j].clearAllPoints();
+								}
 							}
+							theta = 0;
+							save();
 						}
-						theta = 0;
-						save();
+					} else {
+						if (theta < 2 * Math.PI) {
+							for (int i = 0; i < circles.length; i++) {
+								for (int j = 0; j < circles[i].length; j++) {
+									circles[i][j].clearAllPoints();
+									circles[i][j].setPhaseShift(theta);
+									circles[i][j].addAllPoints();
+								}
+							}
+							render(true, true);
+
+							theta += FREQUENCY * getFrameTime();
+						} else {
+							theta = 0;
+						}
 					}
 
 					if (ON_SCREEN)
@@ -133,14 +167,14 @@ public class Lissajous implements Runnable {
 	 * Renders the current frame and draws it to the screen.
 	 * 
 	 * @param clean
-	 *            <li>if true, the horizontal and vertical lines and points are not
-	 *            drawn</li>
-	 *            <li>if false, the horizontal and vertical lines and points are
-	 *            drawn</li>
+	 *              <li>if true, the horizontal and vertical lines and points are
+	 *              not drawn</li>
+	 *              <li>if false, the horizontal and vertical lines and points are
+	 *              drawn</li>
 	 * 
 	 * @since 0.1
 	 */
-	public void render(boolean clean) {
+	public void render(boolean clean, boolean shape) {
 		g2d = currFrame.createGraphics();
 
 		g2d.clearRect(0, 0, currFrame.getWidth(), currFrame.getHeight());
@@ -148,7 +182,8 @@ public class Lissajous implements Runnable {
 		for (int i = 0; i < xCircles.length; i++) {
 			g2d.setColor(Color.getHSBColor(i / (xCircles.length - 1f), 1f, 1));
 
-			xCircles[i].render(g2d);
+			if (shape)
+				xCircles[i].render(g2d);
 
 			if (!clean) {
 				g2d.setColor(Color.WHITE);
@@ -163,7 +198,8 @@ public class Lissajous implements Runnable {
 		for (int i = 0; i < yCircles.length; i++) {
 			g2d.setColor(Color.getHSBColor(i / (yCircles.length - 1f), 1f, 1));
 
-			yCircles[i].render(g2d);
+			if (shape)
+				yCircles[i].render(g2d);
 
 			if (!clean) {
 				g2d.setColor(Color.WHITE);
@@ -179,8 +215,11 @@ public class Lissajous implements Runnable {
 			for (int j = 0; j < circles[i].length; j++) {
 				g2d.setColor(Color.getHSBColor(i / (circles.length - 1f) + j / (circles[i].length - 1f), 1f, 1));
 
-				circles[i][j].addPoint(theta);
-				circles[i][j].render(g2d);
+				if (shape) {
+					if (!ROTATING)
+						circles[i][j].addPoint(theta);
+					circles[i][j].render(g2d);
+				}
 
 				if (!clean) {
 					g2d.setColor(Color.WHITE);
@@ -197,8 +236,8 @@ public class Lissajous implements Runnable {
 	 * Renders the FPS counter to the frame.
 	 * 
 	 * @param infinity
-	 *            <li>if true, infinity is rendered</li>
-	 *            <li>if false, the actual FPS is rendered</li>
+	 *                 <li>if true, infinity is rendered</li>
+	 *                 <li>if false, the actual FPS is rendered</li>
 	 * 
 	 * @since 0.3
 	 */
@@ -278,7 +317,7 @@ public class Lissajous implements Runnable {
 	 * A helper method for the saving algorithm.
 	 * 
 	 * @param source
-	 *            the {@link BufferedImage} to be copied
+	 *               the {@link BufferedImage} to be copied
 	 * 
 	 * @return the independent copy of {@code source}
 	 * 
@@ -307,7 +346,8 @@ public class Lissajous implements Runnable {
 				}
 
 				if (!ON_SCREEN) {
-					JOptionPane.showMessageDialog(null, "File saved on Desktop as \"lissajous."+FORMAT+"\"", "Done", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(null, "File saved on Desktop as \"lissajous." + FORMAT + "\"", "Done",
+							JOptionPane.INFORMATION_MESSAGE);
 					System.exit(0);
 				}
 			}
@@ -343,7 +383,7 @@ public class Lissajous implements Runnable {
 		}
 
 		if (!ON_SCREEN) {
-			render(true);
+			render(true, true);
 			saveImage = deepCopy(currFrame);
 			save();
 		}

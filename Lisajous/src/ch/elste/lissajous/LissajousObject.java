@@ -9,7 +9,7 @@ import java.awt.geom.Point2D;
  * 
  * @author Dillon
  * 
- * @version 1.0
+ * @version 1.1
  *
  */
 public class LissajousObject {
@@ -28,11 +28,11 @@ public class LissajousObject {
 	 * 
 	 * 			Creates a new {@link LissajousObject} with given values.
 	 * @param x
-	 *            the {@link #x}-coordinate of the left top corner
+	 *          the {@link #x}-coordinate of the left top corner
 	 * @param y
-	 *            the {@link #y}-coordinate of the left top corner
+	 *          the {@link #y}-coordinate of the left top corner
 	 * @param f
-	 *            the function to describe the curve
+	 *          the function to describe the curve
 	 * 
 	 * @since 0.1
 	 * 
@@ -52,11 +52,11 @@ public class LissajousObject {
 	 * 
 	 * 			Creates a new {@link LissajousObject} with given values.
 	 * @param x
-	 *            the {@link #x}-coordinate of the left top corner
+	 *          the {@link #x}-coordinate of the left top corner
 	 * @param y
-	 *            the {@link #y}-coordinate of the left top corner
+	 *          the {@link #y}-coordinate of the left top corner
 	 * @param f
-	 *            the function to describe the curve
+	 *          the function to describe the curve
 	 * 
 	 * @since 0.1
 	 * 
@@ -71,11 +71,11 @@ public class LissajousObject {
 	 * Creates a new {@link LissajousObject} with given values.
 	 * 
 	 * @param x
-	 *            the {@link #x}-coordinate of the left top corner
+	 *          the {@link #x}-coordinate of the left top corner
 	 * @param y
-	 *            the {@link #y}-coordinate of the left top corner
+	 *          the {@link #y}-coordinate of the left top corner
 	 * @param f
-	 *            the function to describe the curve
+	 *          the function to describe the curve
 	 * 
 	 * @since 0.2
 	 * 
@@ -94,7 +94,7 @@ public class LissajousObject {
 	 * Add a single point with angle {@code theta} to the curve.
 	 * 
 	 * @param theta
-	 *            the angle defining the point coordinates in radiant
+	 *              the angle defining the point coordinates in radiant
 	 * 
 	 * @since 0.1
 	 * 
@@ -106,7 +106,7 @@ public class LissajousObject {
 
 	/**
 	 * Adds all points from 0 to 360 degree. It acts like calling
-	 * {@link #addAllPoints(double) addAllPoints(1)} with a value of 1.
+	 * {@link #addAllPoints(double) addAllPoints(PI/180)}.
 	 * 
 	 * @since 0.2
 	 */
@@ -120,7 +120,7 @@ public class LissajousObject {
 	 * Adds all the points from 0 to 2*Pi with the given precision.
 	 * 
 	 * @param precision
-	 *            the distance between angles
+	 *                  the distance between angles
 	 * 
 	 * @since 1.0
 	 */
@@ -159,9 +159,9 @@ public class LissajousObject {
 	 * object.
 	 * 
 	 * @param g2d
-	 *            the {@link Graphics2D} object to be drawn to
+	 *              the {@link Graphics2D} object to be drawn to
 	 * @param theta
-	 *            the angle defining the point on the curve
+	 *              the angle defining the point on the curve
 	 * 
 	 * @since 0.1
 	 */
@@ -175,9 +175,9 @@ public class LissajousObject {
 	 * {@link Graphics2D} object.
 	 * 
 	 * @param g2d
-	 *            the {@link Graphics2D} object to be drawn to
+	 *              the {@link Graphics2D} object to be drawn to
 	 * @param theta
-	 *            the angle that defines the x-coordinate of the line
+	 *              the angle that defines the x-coordinate of the line
 	 * 
 	 * @since 0.3
 	 */
@@ -194,7 +194,7 @@ public class LissajousObject {
 	 * {@link LissajousObject} at angle {@code theta}.
 	 * 
 	 * @param theta
-	 *            the angle
+	 *              the angle
 	 * @return x-coordinate in the window of point at angle {@code theta}
 	 * 
 	 * @since 0.3
@@ -219,7 +219,7 @@ public class LissajousObject {
 	 * {@link LissajousObject} at angle {@code theta}.
 	 * 
 	 * @param theta
-	 *            the angle
+	 *              the angle
 	 * @return y-coordinate in the window of point at angle {@code theta}
 	 * 
 	 * @since 0.3
@@ -240,6 +240,18 @@ public class LissajousObject {
 	}
 
 	/**
+	 * Sets the phase shift of this object.
+	 * 
+	 * @param phaseShift
+	 *                   the phase shift between 0 and 2 Pi
+	 * 
+	 * @since 1.1
+	 */
+	public void setPhaseShift(double phaseShift) {
+		f.setPhaseShift(phaseShift);
+	}
+
+	/**
 	 * A class to hold the equation of the lissajous curves.
 	 * 
 	 * @author Dillon
@@ -248,14 +260,29 @@ public class LissajousObject {
 	 */
 	static class LissajousFunction {
 		private int xFactor, yFactor;
+		private double phaseShift;
 
 		public LissajousFunction(int xFactor, int yFactor) {
 			this.xFactor = xFactor;
 			this.yFactor = yFactor;
+
+			phaseShift = 0;
 		}
 
 		public Point2D.Double f(double theta) {
-			return new Point2D.Double(Math.cos(xFactor * theta), Math.sin(yFactor * theta));
+			return new Point2D.Double(Math.cos(xFactor * theta), Math.sin(yFactor * theta + phaseShift));
+		}
+
+		/**
+		 * Sets the phase shift of this function.
+		 * 
+		 * @param phaseShift
+		 *                   the phase shift between 0 and 2 Pi
+		 * 
+		 * @since 1.1
+		 */
+		public void setPhaseShift(double phaseShift) {
+			this.phaseShift = phaseShift;
 		}
 	}
 
@@ -276,7 +303,7 @@ public class LissajousObject {
 		 * the Point described by this function.
 		 * 
 		 * @param theta
-		 *            the angle giving the point on the lissajous curve.
+		 *              the angle giving the point on the lissajous curve.
 		 * @return a {@link Point2D.Double} storing a point on this lissajous curve
 		 */
 		public abstract Point2D.Double f(double theta);
